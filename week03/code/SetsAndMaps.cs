@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
 using System.Text.Json;
 
 public static class SetsAndMaps
@@ -22,7 +26,35 @@ public static class SetsAndMaps
     public static string[] FindPairs(string[] words)
     {
         // TODO Problem 1 - ADD YOUR CODE HERE
-        return [];
+        if (words == null || words.Length == 0)
+            return [];
+
+        var set = new HashSet<string>(words);
+        var result = new List<string>();
+
+        foreach (var word in set)
+        {
+            if (string.IsNullOrEmpty(word) || word.Length != 2)
+                continue;
+
+            char a = word[0];
+            char b = word[1];
+
+            if (a == b)
+                continue;
+
+            string reverse = new string(new[] { b, a });
+
+            if (set.Contains(reverse))
+            {
+                if (string.CompareOrdinal(word, reverse) < 0)
+                {
+                    result.Add($"{word} & {reverse}");
+                }
+            }
+        }
+
+        return result.ToArray();
     }
 
     /// <summary>
@@ -43,6 +75,15 @@ public static class SetsAndMaps
         {
             var fields = line.Split(",");
             // TODO Problem 2 - ADD YOUR CODE HERE
+            if (fields.Length < 4)
+                continue;
+
+            var degree = fields[3].Trim();
+
+            if (degrees.TryGetValue(degree, out int count))
+                degrees[degree] = count + 1;
+            else
+                degrees[degree] = 1;
         }
 
         return degrees;
@@ -67,9 +108,43 @@ public static class SetsAndMaps
     public static bool IsAnagram(string word1, string word2)
     {
         // TODO Problem 3 - ADD YOUR CODE HERE
-        return false;
-    }
+        if (word1 == null || word2 == null)
+            return false;
 
+        int[] counts = new int[char.MaxValue + 1];
+        int len1 = 0, len2 = 0;
+
+        foreach (char ch in word1)
+        {
+            if (ch == ' ')
+                continue;
+
+            char c = char.ToUpperInvariant(ch);
+            counts[c]++;
+            len1++;
+        }
+
+        foreach (char ch in word2)
+        {
+            if (ch == ' ')
+                continue;
+
+            char c = char.ToUpperInvariant(ch);
+            counts[c]--;
+            len2++;
+        }
+
+        if (len1 != len2)
+            return false;
+
+        for (int i = 0; i < counts.Length; i++)
+        {
+            if (counts[i] != 0)
+                return false;
+        }
+
+        return true;
+    }
     /// <summary>
     /// This function will read JSON (Javascript Object Notation) data from the 
     /// United States Geological Service (USGS) consisting of earthquake data.
@@ -101,6 +176,23 @@ public static class SetsAndMaps
         // on those classes so that the call to Deserialize above works properly.
         // 2. Add code below to create a string out each place a earthquake has happened today and its magitude.
         // 3. Return an array of these string descriptions.
-        return [];
+        if (featureCollection?.Features == null)
+            return [];
+
+        var results = new List<string>(featureCollection.Features.Count);
+
+        foreach (var f in featureCollection.Features)
+        {
+            var place = f?.Properties?.Place;
+            var mag = f?.Properties?.Mag;
+
+            if (string.IsNullOrWhiteSpace(place))
+                continue;
+
+            string magText = mag.HasValue ? mag.Value.ToString() : "0";
+            results.Add($"{place} - Mag {magText}");
+        }
+
+        return results.ToArray();
     }
 }
